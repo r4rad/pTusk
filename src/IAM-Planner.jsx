@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { Sun, Moon } from "lucide-react";
 
 // ─── PERSISTENT STORAGE (works in Claude artifacts AND localStorage) ─────────
 const Store = {
@@ -701,6 +702,7 @@ export default function App() {
     const [commitsDone, setCommitsDone] = useState({});
     const [notes, setNotes] = useState({});
     const [dayNotes, setDayNotes] = useState({});
+    const [theme, setTheme] = useState("dark");
 
     useEffect(() => {
         (async () => {
@@ -708,6 +710,8 @@ export default function App() {
             const cd = await Store.get("iam:commitsDone");
             const n = await Store.get("iam:notes");
             const dn = await Store.get("iam:dayNotes");
+            const savedTheme = await Store.get("iam:theme");
+            if (savedTheme) setTheme(savedTheme);
             const defaultDone = {};
             DAY_PLANS[0].tasks[0].commits.forEach(c => { defaultDone[c.id] = true; });
             setTaskStatus(ts || { "D1-T1": "done" });
@@ -722,6 +726,7 @@ export default function App() {
     useEffect(() => { if (loaded) Store.set("iam:commitsDone", commitsDone); }, [commitsDone, loaded]);
     useEffect(() => { if (loaded) Store.set("iam:notes", notes); }, [notes, loaded]);
     useEffect(() => { if (loaded) Store.set("iam:dayNotes", dayNotes); }, [dayNotes, loaded]);
+    useEffect(() => { if (loaded) Store.set("iam:theme", theme); }, [theme, loaded]);
 
     const toggleCommit = useCallback((cid) => setCommitsDone(p => ({ ...p, [cid]: !p[cid] })), []);
     const setTask = useCallback((tid, val) => setTaskStatus(p => ({ ...p, [tid]: val })), []);
@@ -739,39 +744,62 @@ export default function App() {
         </div>
     );
 
+    
+    const isDark = theme === "dark";
+    const colors = {
+        bg: isDark ? "#0A0D14" : "#F8F5F2", // Midnight Blue vs Matte Cream
+        headerBg: isDark ? "#121622" : "#EBE6E0",
+        border: isDark ? "#2A3143" : "#D1CAC2",
+        textMain: isDark ? colors.textMain : "#2C3643",
+        textMuted: isDark ? colors.textMuted : "#6E7A8A",
+        cardBg: isDark ? "#121622" : "#FFFFFF",
+        cardBorder: isDark ? "#2A3143" : "#EBE6E0",
+        cardHighlight: isDark ? "#1C212E" : "#F4EFEA",
+        accent: colors.accent,
+        accentLight: isDark ? "#388BFD33" : "#E2EFFF",
+        success: colors.success,
+        warning: "#D2A8FF",
+        danger: "#F85149"
+    };
+
+    const toggleTheme = () => setTheme(isDark ? "light" : "dark");
+
     const MAIN_TABS = [
         { id: "day", label: "📅 Day Planner" },
         { id: "week", label: "🗓 15-Day Grid" },
     ];
 
     return (
-        <div style={{ fontFamily: "'IBM Plex Mono',monospace", background: "#0D1117", minHeight: "100vh", fontSize: 12, color: "#C9D1D9" }}>
+        <div style={{ fontFamily: "'IBM Plex Mono',monospace", background: colors.bg, minHeight: "100vh", fontSize: 13, color: colors.textMain, transition: "background-color 0.3s ease, color 0.3s ease", display: "flex", flexDirection: "column" }}>
             {/* ── Header ── */}
-            <div style={{ background: "#161B22", borderBottom: "1px solid #30363D", padding: "10px 16px 0" }}>
+            <div style={{ background: colors.headerBg, borderBottom: `1px solid ${colors.border}`, padding: "16px 24px 0", transition: "background-color 0.3s ease, border-color 0.3s ease" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
                     <div>
-                        <div style={{ fontSize: 14, fontWeight: 700, color: "#E6EDF3", letterSpacing: "-0.3px" }}>
-                            IAMService <span style={{ color: "#388BFD" }}>·</span> Day Planner v2
+                        <div style={{ fontSize: 14, fontWeight: 700, color: colors.textMain, letterSpacing: "-0.3px" }}>
+                            IAMService <span style={{ color: colors.accent }}>·</span> Day Planner v2
                         </div>
-                        <div style={{ fontSize: 10, color: "#8B949E", marginTop: 1 }}>
+                        <div style={{ fontSize: 10, color: colors.textMuted, marginTop: 1 }}>
                             41 stories · 179 pts · N-Tier DDD · Architecture v10.4 · {WORK_DATES[TODAY_DAY - 1]} = TODAY
                         </div>
                     </div>
-                    <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                    <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
+                        <button onClick={toggleTheme} style={{ background: "transparent", border: "none", cursor: "pointer", color: colors.textMuted, display: "flex", alignItems: "center", justifyContent: "center", padding: "8px", borderRadius: "50%", transition: "all 0.2s ease" }} onMouseOver={(e) => e.currentTarget.style.color = colors.accent} onMouseOut={(e) => e.currentTarget.style.color = colors.textMuted}>
+                            {isDark ? <Sun size={20} /> : <Moon size={20} />}
+                        </button>
                         {[
-                            { v: `${doneCommits}/${ALL_COMMIT_IDS.length}`, l: "Commits", c: "#388BFD" },
-                            { v: `${doneTasks}/${ALL_TASK_IDS.length}`, l: "Tasks", c: "#3FB950" },
+                            { v: `${doneCommits}/${ALL_COMMIT_IDS.length}`, l: "Commits", c: colors.accent },
+                            { v: `${doneTasks}/${ALL_TASK_IDS.length}`, l: "Tasks", c: colors.success },
                             { v: `${pct}%`, l: "Overall", c: "#D2A8FF" },
                         ].map(s => (
                             <div key={s.l} style={{ textAlign: "center" }}>
                                 <div style={{ fontSize: 14, fontWeight: 700, color: s.c }}>{s.v}</div>
-                                <div style={{ fontSize: 9, color: "#8B949E" }}>{s.l}</div>
+                                <div style={{ fontSize: 9, color: colors.textMuted }}>{s.l}</div>
                             </div>
                         ))}
                     </div>
                 </div>
                 {/* Progress bar */}
-                <div style={{ height: 2, background: "#21262D", borderRadius: 1, marginBottom: 0 }}>
+                <div style={{ height: 2, background: colors.border, borderRadius: 1, marginBottom: 0 }}>
                     <div style={{ height: 2, borderRadius: 1, background: "linear-gradient(90deg,#1F6FEB,#388BFD)", width: `${pct}%`, transition: "width .5s" }} />
                 </div>
                 <div style={{ display: "flex", gap: 1, marginTop: 6 }}>
@@ -779,7 +807,7 @@ export default function App() {
                         <button key={t.id} onClick={() => setActiveTab(t.id)} style={{
                             padding: "6px 14px", border: "none", background: "none", cursor: "pointer", fontSize: 11,
                             fontWeight: activeTab === t.id ? 700 : 400,
-                            color: activeTab === t.id ? "#E6EDF3" : "#8B949E",
+                            color: activeTab === t.id ? colors.textMain : colors.textMuted,
                             borderBottom: activeTab === t.id ? "2px solid #388BFD" : "2px solid transparent",
                             fontFamily: "inherit",
                         }}>{t.label}</button>
@@ -788,7 +816,7 @@ export default function App() {
             </div>
 
             {/* ── Main content ── */}
-            <div style={{ padding: "14px 16px" }}>
+            <div style={{ padding: "24px", flex: 1, display: "flex", flexDirection: "column" }}>
                 {activeTab === "day" && (
                     <DayView
                         selectedDay={selectedDay} setSelectedDay={setSelectedDay}
@@ -797,11 +825,11 @@ export default function App() {
                         notes={notes} setNotes={setNotes}
                         dayNotes={dayNotes} setDayNotes={setDayNotes}
                         openStory={openStory} setOpenStory={setOpenStory}
-                        storyTab={storyTab} setStoryTab={setStoryTab}
+                        storyTab={storyTab} setStoryTab={setStoryTab} colors={colors} isDark={isDark}
                     />
                 )}
                 {activeTab === "week" && (
-                    <WeekGrid taskStatus={taskStatus} commitsDone={commitsDone}
+                    <WeekGrid taskStatus={taskStatus} commitsDone={commitsDone} colors={colors} isDark={isDark}
                         setSelectedDay={d => { setSelectedDay(d); setActiveTab("day"); }} />
                 )}
             </div>
@@ -812,7 +840,7 @@ export default function App() {
                     storyKey={openStory}
                     storyTab={storyTab}
                     setStoryTab={setStoryTab}
-                    onClose={() => setOpenStory(null)}
+                    onClose={() => setOpenStory(null)} colors={colors} isDark={isDark}
                 />
             )}
         </div>
@@ -820,7 +848,7 @@ export default function App() {
 }
 
 // ─── DAY VIEW ─────────────────────────────────────────────────────────────────
-function DayView({ selectedDay, setSelectedDay, taskStatus, setTask, commitsDone, toggleCommit, notes, setNotes, dayNotes, setDayNotes, openStory, setOpenStory, storyTab, setStoryTab }) {
+function DayView({ selectedDay, setSelectedDay, taskStatus, setTask, commitsDone, toggleCommit, notes, setNotes, dayNotes, setDayNotes, openStory, setOpenStory, storyTab, setStoryTab, colors, isDark }) {
     const plan = DAY_PLANS.find(d => d.day === selectedDay);
     const isToday = selectedDay === TODAY_DAY;
     const isPast = selectedDay < TODAY_DAY;
@@ -829,10 +857,10 @@ function DayView({ selectedDay, setSelectedDay, taskStatus, setTask, commitsDone
     const hours = plan.tasks.reduce((a, t) => a + t.hours, 0);
 
     return (
-        <div style={{ display: "grid", gridTemplateColumns: "170px 1fr", gap: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "220px 1fr", gap: 24, flex: 1 }}>
             {/* ── Sidebar day picker ── */}
-            <div style={{ background: "#161B22", border: "1px solid #30363D", borderRadius: 6, overflow: "hidden", alignSelf: "start", position: "sticky", top: 14 }}>
-                <div style={{ padding: "8px 10px", borderBottom: "1px solid #30363D", fontSize: 10, fontWeight: 700, color: "#8B949E", letterSpacing: 1 }}>
+            <div style={{ background: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 8, overflow: "hidden", alignSelf: "start", position: "sticky", top: 24, transition: "background-color 0.3s ease, border-color 0.3s ease", boxShadow: isDark ? "0 4px 20px rgba(0,0,0,0.3)" : "0 4px 20px rgba(0,0,0,0.05)" }}>
+                <div style={{ padding: "12px 16px", borderBottom: `1px solid ${colors.border}`, fontSize: 11, fontWeight: 700, color: colors.textMuted, letterSpacing: 1, backgroundColor: colors.headerBg }}>
                     15 WORKING DAYS
                 </div>
                 {DAY_PLANS.map(d => {
@@ -843,20 +871,20 @@ function DayView({ selectedDay, setSelectedDay, taskStatus, setTask, commitsDone
                     return (
                         <div key={d.day} onClick={() => setSelectedDay(d.day)} style={{
                             padding: "6px 10px", cursor: "pointer",
-                            background: isSel ? "#1C2128" : isT ? "#1A1F26" : "transparent",
-                            borderLeft: `2px solid ${isSel ? "#388BFD" : isT ? "#D2A8FF" : p === 100 ? "#3FB950" : "#21262D"}`,
-                            borderBottom: "1px solid #21262D",
+                            background: isSel ? colors.cardHighlight : isT ? (isDark ? "#1A1F26" : "#F0F4FA") : "transparent",
+                            borderLeft: `3px solid ${isSel ? colors.accent : isT ? colors.warning : p === 100 ? colors.success : "transparent"}`, borderRight: "none", borderTop: "none",
+                            borderBottom: `1px solid ${colors.border}`,
                         }}>
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                <span style={{ fontSize: 10, fontWeight: 700, color: isSel ? "#388BFD" : isT ? "#D2A8FF" : "#8B949E" }}>
-                                    {isT ? "▶ " : ""}{d.date.replace(" Mar", "").replace("Tue ", "").replace("Wed ", "").replace("Thu ", "").replace("Sun ", "").replace("Mon ", "")} <span style={{ fontWeight: 400, color: "#6E7681", fontSize: 9 }}>{d.date.split(" ").slice(0, 2).join(" ")}</span>
+                                <span style={{ fontSize: 11, fontWeight: 700, color: isSel ? colors.accent : isT ? colors.warning : colors.textMain }}>
+                                    {isT ? "▶ " : ""}{d.date.replace(" Mar", "").replace("Tue ", "").replace("Wed ", "").replace("Thu ", "").replace("Sun ", "").replace("Mon ", "")} <span style={{ fontWeight: 400, color: colors.textMuted, fontSize: 10 }}>{d.date.split(" ").slice(0, 2).join(" ")}</span>
                                 </span>
-                                <span style={{ fontSize: 9, color: p === 100 ? "#3FB950" : p > 0 ? "#388BFD" : "#484F58" }}>{done}/{dc.length}</span>
+                                <span style={{ fontSize: 10, color: p === 100 ? colors.success : p > 0 ? colors.accent : colors.textMuted }}>{done}/{dc.length}</span>
                             </div>
-                            <div style={{ fontSize: 9, color: "#6E7681", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginTop: 1 }}>{d.theme}</div>
-                            {d.milestone && <div style={{ fontSize: 8, marginTop: 2, color: "#3FB950", fontWeight: 700 }}>{d.milestone}</div>}
-                            {dc.length > 0 && <div style={{ marginTop: 3, height: 1, background: "#21262D", borderRadius: 1 }}>
-                                <div style={{ height: 1, borderRadius: 1, background: p === 100 ? "#3FB950" : "#388BFD", width: `${p}%`, transition: "width .3s" }} />
+                            <div style={{ fontSize: 10, color: colors.textMuted, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginTop: 4 }}>{d.theme}</div>
+                            {d.milestone && <div style={{ fontSize: 8, marginTop: 2, color: colors.success, fontWeight: 700 }}>{d.milestone}</div>}
+                            {dc.length > 0 && <div style={{ marginTop: 3, height: 1, background: colors.border, borderRadius: 1 }}>
+                                <div style={{ height: 1, borderRadius: 1, background: p === 100 ? colors.success : colors.accent, width: `${p}%`, transition: "width .3s" }} />
                             </div>}
                         </div>
                     );
@@ -866,22 +894,22 @@ function DayView({ selectedDay, setSelectedDay, taskStatus, setTask, commitsDone
             {/* ── Main day detail ── */}
             <div>
                 {/* Day banner */}
-                <div style={{ background: isToday ? "#1C2128" : "#161B22", border: `1px solid ${isToday ? "#388BFD" : "#30363D"}`, borderRadius: 6, padding: "12px 14px", marginBottom: 12, borderLeft: `3px solid ${isToday ? "#388BFD" : isPast ? "#3FB950" : "#30363D"}` }}>
+                <div style={{ background: isToday ? colors.cardHighlight : colors.cardBg, border: `1px solid ${isToday ? colors.accent : colors.border}`, borderRadius: 8, padding: "20px 24px", marginBottom: 20, borderLeft: `4px solid ${isToday ? colors.accent : isPast ? colors.success : colors.border}`, transition: "background-color 0.3s ease, border-color 0.3s ease", boxShadow: isDark ? "0 4px 20px rgba(0,0,0,0.3)" : "0 4px 20px rgba(0,0,0,0.05)" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 8 }}>
                         <div>
-                            <div style={{ fontSize: 15, fontWeight: 700, color: "#E6EDF3" }}>
+                            <div style={{ fontSize: 18, fontWeight: 700, color: colors.textMain }}>
                                 Day {plan.day} — {plan.date}
-                                {isToday && <span style={{ marginLeft: 8, fontSize: 9, padding: "2px 7px", borderRadius: 10, background: "#D2A8FF", color: "#0D1117", fontWeight: 700 }}>TODAY</span>}
+                                {isToday && <span style={{ marginLeft: 8, fontSize: 9, padding: "2px 7px", borderRadius: 10, background: "#D2A8FF", color: colors.bg, fontWeight: 700 }}>TODAY</span>}
                                 {isPast && <span style={{ marginLeft: 8, fontSize: 9, padding: "2px 7px", borderRadius: 10, background: "#238636", color: "#fff", fontWeight: 700 }}>PAST</span>}
                             </div>
-                            <div style={{ fontSize: 11, color: "#8B949E", marginTop: 2 }}>{plan.theme}</div>
-                            {plan.milestone && <div style={{ marginTop: 4, fontSize: 9, padding: "2px 7px", borderRadius: 4, background: "#0D4429", color: "#3FB950", fontWeight: 700, display: "inline-block", border: "1px solid #238636" }}>{plan.milestone}</div>}
+                            <div style={{ fontSize: 11, color: colors.textMuted, marginTop: 2 }}>{plan.theme}</div>
+                            {plan.milestone && <div style={{ marginTop: 4, fontSize: 9, padding: "2px 7px", borderRadius: 4, background: "#0D4429", color: colors.success, fontWeight: 700, display: "inline-block", border: "1px solid #238636" }}>{plan.milestone}</div>}
                         </div>
                         <div style={{ display: "flex", gap: 14 }}>
                             {[{ v: `${hours}h`, l: "Planned" }, { v: `${DAILY_HOURS}h`, l: "Budget" }, { v: `${doneDayC}/${dayCommits.length}`, l: "Commits" }, { v: plan.tasks.length, l: "Tasks" }].map(s => (
                                 <div key={s.l} style={{ textAlign: "center" }}>
-                                    <div style={{ fontSize: 14, fontWeight: 700, color: s.l === "Planned" && hours > DAILY_HOURS ? "#F85149" : "#E6EDF3" }}>{s.v}</div>
-                                    <div style={{ fontSize: 9, color: "#8B949E" }}>{s.l}</div>
+                                    <div style={{ fontSize: 14, fontWeight: 700, color: s.l === "Planned" && hours > DAILY_HOURS ? "#F85149" : colors.textMain }}>{s.v}</div>
+                                    <div style={{ fontSize: 9, color: colors.textMuted }}>{s.l}</div>
                                 </div>
                             ))}
                         </div>
@@ -890,7 +918,7 @@ function DayView({ selectedDay, setSelectedDay, taskStatus, setTask, commitsDone
                         placeholder="Day notes / blockers / stand-up…"
                         style={{
                             marginTop: 8, width: "100%", height: 32, fontSize: 10, padding: "5px 8px", borderRadius: 4,
-                            border: "1px solid #30363D", background: "#0D1117", color: "#C9D1D9", resize: "none",
+                            border: `1px solid ${colors.border}`, background: colors.bg, color: colors.textMain, resize: "none",
                             boxSizing: "border-box", outline: "none", fontFamily: "inherit"
                         }} />
                 </div>
@@ -905,76 +933,76 @@ function DayView({ selectedDay, setSelectedDay, taskStatus, setTask, commitsDone
                     const isArch = task.epic === "ARCH";
 
                     return (
-                        <div key={task.id} style={{ background: "#161B22", border: `1px solid ${isArch ? "#D2A8FF33" : "#30363D"}`, borderRadius: 6, marginBottom: 10, borderLeft: `3px solid ${ep.color}` }}>
+                        <div key={task.id} style={{ background: colors.cardBg, border: `1px solid ${isArch ? "#D2A8FF33" : colors.border}`, borderRadius: 6, marginBottom: 10, borderLeft: `3px solid ${ep.color}` }}>
                             {/* Task header — click storyKey to open modal */}
                             <div style={{ padding: "10px 12px", borderBottom: "1px solid #21262D" }}>
                                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8, flexWrap: "wrap" }}>
                                     <div style={{ flex: 1, minWidth: 0 }}>
                                         <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: 2 }}>
-                                            <span style={{ fontSize: 10, fontWeight: 700, color: "#0D1117", padding: "1px 6px", borderRadius: 3, background: ep.color }}>{task.storyKey}</span>
-                                            {isArch && <span style={{ fontSize: 9, padding: "1px 5px", borderRadius: 3, background: "#D2A8FF", color: "#0D1117", fontWeight: 700 }}>MIGRATION</span>}
+                                            <span style={{ fontSize: 10, fontWeight: 700, color: colors.bg, padding: "1px 6px", borderRadius: 3, background: ep.color }}>{task.storyKey}</span>
+                                            {isArch && <span style={{ fontSize: 9, padding: "1px 5px", borderRadius: 3, background: "#D2A8FF", color: colors.bg, fontWeight: 700 }}>MIGRATION</span>}
                                             {task.note?.includes("EARLY") && <span style={{ fontSize: 9, padding: "1px 5px", borderRadius: 3, background: "#1A7F37", color: "#fff", fontWeight: 700 }}>⬆ EARLY</span>}
                                             {/* Clickable story key button */}
                                             <button onClick={() => { setOpenStory(task.storyKey); setStoryTab("backlog"); }} style={{
-                                                fontSize: 9, padding: "1px 7px", borderRadius: 3, background: "#1C2128", border: "1px solid #30363D",
-                                                color: "#388BFD", cursor: "pointer", fontFamily: "inherit", fontWeight: 700,
+                                                fontSize: 9, padding: "1px 7px", borderRadius: 3, background: colors.cardHighlight, border: `1px solid ${colors.border}`,
+                                                color: colors.accent, cursor: "pointer", fontFamily: "inherit", fontWeight: 700,
                                             }}>📋 Story</button>
                                             <button onClick={() => { setOpenStory(task.storyKey); setStoryTab("prompts"); }} style={{
-                                                fontSize: 9, padding: "1px 7px", borderRadius: 3, background: "#1C2128", border: "1px solid #30363D",
+                                                fontSize: 9, padding: "1px 7px", borderRadius: 3, background: colors.cardHighlight, border: `1px solid ${colors.border}`,
                                                 color: "#D2A8FF", cursor: "pointer", fontFamily: "inherit", fontWeight: 700,
                                             }}>🤖 Prompts</button>
                                         </div>
-                                        <div style={{ fontSize: 12, fontWeight: 700, color: "#E6EDF3", marginBottom: 2 }}>{task.title}</div>
-                                        {task.note && <div style={{ fontSize: 10, color: "#8B949E", fontStyle: "italic" }}>{task.note}</div>}
+                                        <div style={{ fontSize: 12, fontWeight: 700, color: colors.textMain, marginBottom: 2 }}>{task.title}</div>
+                                        {task.note && <div style={{ fontSize: 10, color: colors.textMuted, fontStyle: "italic" }}>{task.note}</div>}
                                         {task.depends.length > 0 && <div style={{ display: "flex", gap: 3, alignItems: "center", marginTop: 3, flexWrap: "wrap" }}>
-                                            <span style={{ fontSize: 9, color: "#6E7681" }}>needs:</span>
-                                            {task.depends.map(d => <span key={d} style={{ fontSize: 9, padding: "1px 4px", borderRadius: 3, background: "#21262D", color: "#8B949E" }}>{d}</span>)}
+                                            <span style={{ fontSize: 9, color: colors.textMuted }}>needs:</span>
+                                            {task.depends.map(d => <span key={d} style={{ fontSize: 9, padding: "1px 4px", borderRadius: 3, background: colors.border, color: colors.textMuted }}>{d}</span>)}
                                         </div>}
                                     </div>
                                     <div style={{ display: "flex", gap: 8, alignItems: "center", flexShrink: 0 }}>
                                         <div style={{ textAlign: "center" }}>
-                                            <div style={{ fontSize: 12, fontWeight: 700, color: task.hours === 0 ? "#484F58" : "#E6EDF3" }}>{task.hours}h</div>
-                                            <div style={{ fontSize: 8, color: "#6E7681" }}>est.</div>
+                                            <div style={{ fontSize: 12, fontWeight: 700, color: task.hours === 0 ? "#484F58" : colors.textMain }}>{task.hours}h</div>
+                                            <div style={{ fontSize: 8, color: colors.textMuted }}>est.</div>
                                         </div>
-                                        <span style={{ fontSize: 9, padding: "2px 6px", borderRadius: 4, background: task.model === "Opus 4.6" ? "#1E1033" : "#0D2140", color: task.model === "Opus 4.6" ? "#D2A8FF" : "#388BFD", fontWeight: 700, border: `1px solid ${task.model === "Opus 4.6" ? "#D2A8FF44" : "#388BFD44"}` }}>{task.model}</span>
+                                        <span style={{ fontSize: 9, padding: "2px 6px", borderRadius: 4, background: task.model === "Opus 4.6" ? "#1E1033" : "#0D2140", color: task.model === "Opus 4.6" ? "#D2A8FF" : colors.accent, fontWeight: 700, border: `1px solid ${task.model === "Opus 4.6" ? "#D2A8FF44" : "#388BFD44"}` }}>{task.model}</span>
                                         <select value={st} onChange={e => setTask(task.id, e.target.value)} style={{
                                             fontSize: 9, padding: "3px 6px", borderRadius: 4, border: `1px solid ${scfg.dot}66`,
-                                            background: "#21262D", color: scfg.text, cursor: "pointer", fontFamily: "inherit", fontWeight: 700,
+                                            background: colors.border, color: scfg.text, cursor: "pointer", fontFamily: "inherit", fontWeight: 700,
                                         }}>
-                                            {Object.entries(STATUS_CFG).map(([v, c]) => <option key={v} value={v} style={{ background: "#161B22" }}>{c.label}</option>)}
+                                            {Object.entries(STATUS_CFG).map(([v, c]) => <option key={v} value={v} style={{ background: colors.cardBg }}>{c.label}</option>)}
                                         </select>
                                     </div>
                                 </div>
                                 {/* Progress bar */}
                                 <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 8 }}>
-                                    <div style={{ flex: 1, height: 3, background: "#21262D", borderRadius: 2 }}>
-                                        <div style={{ height: 3, borderRadius: 2, background: tPct === 100 ? "#3FB950" : ep.color, width: `${tPct}%`, transition: "width .3s" }} />
+                                    <div style={{ flex: 1, height: 3, background: colors.border, borderRadius: 2 }}>
+                                        <div style={{ height: 3, borderRadius: 2, background: tPct === 100 ? colors.success : ep.color, width: `${tPct}%`, transition: "width .3s" }} />
                                     </div>
-                                    <span style={{ fontSize: 9, color: "#6E7681", flexShrink: 0 }}>{tDone}/{task.commits.length}</span>
+                                    <span style={{ fontSize: 9, color: colors.textMuted, flexShrink: 0 }}>{tDone}/{task.commits.length}</span>
                                 </div>
                             </div>
 
                             {/* Commits */}
                             <div style={{ padding: "8px 12px" }}>
-                                <div style={{ fontSize: 9, fontWeight: 700, color: "#6E7681", letterSpacing: 1, marginBottom: 5 }}>COMMITS</div>
+                                <div style={{ fontSize: 9, fontWeight: 700, color: colors.textMuted, letterSpacing: 1, marginBottom: 5 }}>COMMITS</div>
                                 {task.commits.map((c, ci) => {
                                     const done = !!commitsDone[c.id];
                                     return (
                                         <div key={c.id} onClick={() => toggleCommit(c.id)} style={{
                                             display: "flex", alignItems: "flex-start", gap: 7, padding: "4px 7px", borderRadius: 4,
                                             cursor: "pointer", marginBottom: 2,
-                                            background: done ? "#0D2818" : "#21262D",
-                                            border: `1px solid ${done ? "#238636" : "#30363D"}`, transition: "all .15s",
+                                            background: done ? "#0D2818" : colors.border,
+                                            border: `1px solid ${done ? "#238636" : colors.border}`, transition: "all .15s",
                                         }}>
                                             <div style={{
-                                                width: 12, height: 12, borderRadius: 2, border: `1.5px solid ${done ? "#3FB950" : "#484F58"}`,
+                                                width: 12, height: 12, borderRadius: 2, border: `1.5px solid ${done ? colors.success : "#484F58"}`,
                                                 background: done ? "#238636" : "transparent", display: "flex", alignItems: "center", justifyContent: "center",
                                                 flexShrink: 0, marginTop: 1
                                             }}>
                                                 {done && <span style={{ color: "#fff", fontSize: 8, fontWeight: 900, lineHeight: 1 }}>✓</span>}
                                             </div>
                                             <span style={{
-                                                flex: 1, fontSize: 10, color: done ? "#3FB950" : "#C9D1D9", fontWeight: done ? 500 : 400,
+                                                flex: 1, fontSize: 10, color: done ? colors.success : colors.textMain, fontWeight: done ? 500 : 400,
                                                 textDecoration: done ? "line-through" : "none", lineHeight: 1.4
                                             }}>
                                                 {c.label}
@@ -985,7 +1013,7 @@ function DayView({ selectedDay, setSelectedDay, taskStatus, setTask, commitsDone
                                 })}
                                 {/* Verify */}
                                 <div style={{ marginTop: 7, padding: "6px 9px", background: "#0D2818", borderRadius: 4, border: "1px solid #238636" }}>
-                                    <span style={{ fontSize: 9, fontWeight: 700, color: "#3FB950" }}>✔ VERIFY: </span>
+                                    <span style={{ fontSize: 9, fontWeight: 700, color: colors.success }}>✔ VERIFY: </span>
                                     <span style={{ fontSize: 9, color: "#7EE787" }}>{task.verify}</span>
                                 </div>
                                 {/* Notes */}
@@ -994,7 +1022,7 @@ function DayView({ selectedDay, setSelectedDay, taskStatus, setTask, commitsDone
                                     placeholder="Notes / blockers / decisions…"
                                     style={{
                                         marginTop: 5, width: "100%", height: 28, fontSize: 10, padding: "4px 7px", borderRadius: 4,
-                                        border: "1px solid #30363D", background: "#0D1117", color: "#C9D1D9", resize: "none",
+                                        border: `1px solid ${colors.border}`, background: colors.bg, color: colors.textMain, resize: "none",
                                         boxSizing: "border-box", outline: "none", fontFamily: "inherit"
                                     }} />
                             </div>
@@ -1004,8 +1032,8 @@ function DayView({ selectedDay, setSelectedDay, taskStatus, setTask, commitsDone
 
                 {/* Nav */}
                 <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
-                    <button disabled={selectedDay <= 1} onClick={() => setSelectedDay(d => d - 1)} style={{ padding: "6px 16px", borderRadius: 5, border: "1px solid #30363D", background: "#21262D", color: selectedDay <= 1 ? "#484F58" : "#C9D1D9", cursor: selectedDay <= 1 ? "not-allowed" : "pointer", fontFamily: "inherit", fontSize: 11 }}>← Prev Day</button>
-                    <button disabled={selectedDay >= 15} onClick={() => setSelectedDay(d => d + 1)} style={{ padding: "6px 16px", borderRadius: 5, border: "1px solid #30363D", background: "#21262D", color: selectedDay >= 15 ? "#484F58" : "#C9D1D9", cursor: selectedDay >= 15 ? "not-allowed" : "pointer", fontFamily: "inherit", fontSize: 11 }}>Next Day →</button>
+                    <button disabled={selectedDay <= 1} onClick={() => setSelectedDay(d => d - 1)} style={{ padding: "6px 16px", borderRadius: 5, border: `1px solid ${colors.border}`, background: colors.border, color: selectedDay <= 1 ? "#484F58" : colors.textMain, cursor: selectedDay <= 1 ? "not-allowed" : "pointer", fontFamily: "inherit", fontSize: 11 }}>← Prev Day</button>
+                    <button disabled={selectedDay >= 15} onClick={() => setSelectedDay(d => d + 1)} style={{ padding: "6px 16px", borderRadius: 5, border: `1px solid ${colors.border}`, background: colors.border, color: selectedDay >= 15 ? "#484F58" : colors.textMain, cursor: selectedDay >= 15 ? "not-allowed" : "pointer", fontFamily: "inherit", fontSize: 11 }}>Next Day →</button>
                 </div>
             </div>
         </div>
@@ -1013,15 +1041,15 @@ function DayView({ selectedDay, setSelectedDay, taskStatus, setTask, commitsDone
 }
 
 // ─── WEEK GRID ────────────────────────────────────────────────────────────────
-function WeekGrid({ taskStatus, commitsDone, setSelectedDay }) {
+function WeekGrid({ taskStatus, commitsDone, setSelectedDay, colors, isDark }) {
     const weeks = [[1, 2, 3], [4, 5, 6, 7, 8], [9, 10], [11, 12], [13, 14, 15]];
     const weekLabels = ["Week 1 (3–5 Mar)", "Week 2 (8–12 Mar)", "Week 3 (15–16 Mar)", "Week 4 (24–25 Mar)", "Week 5 (29–31 Mar)"];
     return (
         <div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#E6EDF3", marginBottom: 12 }}>15-Day Sprint Overview — click any day</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: colors.textMain, marginBottom: 12 }}>15-Day Sprint Overview — click any day</div>
             {weeks.map((wDays, wi) => (
                 <div key={wi} style={{ marginBottom: 16 }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: "#8B949E", letterSpacing: 1, marginBottom: 6 }}>{weekLabels[wi]}</div>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: colors.textMuted, letterSpacing: 1, marginBottom: 6 }}>{weekLabels[wi]}</div>
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                         {wDays.map(dayNum => {
                             const plan = DAY_PLANS.find(d => d.day === dayNum);
@@ -1033,29 +1061,29 @@ function WeekGrid({ taskStatus, commitsDone, setSelectedDay }) {
                             const epics = [...new Set(plan.tasks.map(t => t.epic))];
                             return (
                                 <div key={dayNum} onClick={() => setSelectedDay(dayNum)} style={{
-                                    background: "#161B22", border: `1px solid ${isT ? "#388BFD" : p === 100 ? "#238636" : "#30363D"}`,
+                                    background: colors.cardBg, border: `1px solid ${isT ? colors.accent : p === 100 ? "#238636" : colors.border}`,
                                     borderRadius: 6, padding: "10px 12px", cursor: "pointer", minWidth: 150, flex: 1,
                                     boxShadow: isT ? "0 0 0 2px #388BFD33" : "none",
                                 }}>
                                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
                                         <div>
-                                            <div style={{ fontSize: 11, fontWeight: 700, color: isT ? "#388BFD" : p === 100 ? "#3FB950" : "#E6EDF3" }}>D{dayNum} {isT ? "◀ TODAY" : ""}</div>
-                                            <div style={{ fontSize: 9, color: "#8B949E" }}>{plan.date}</div>
+                                            <div style={{ fontSize: 11, fontWeight: 700, color: isT ? colors.accent : p === 100 ? colors.success : colors.textMain }}>D{dayNum} {isT ? "◀ TODAY" : ""}</div>
+                                            <div style={{ fontSize: 9, color: colors.textMuted }}>{plan.date}</div>
                                         </div>
-                                        <div style={{ fontSize: 13, fontWeight: 700, color: p === 100 ? "#3FB950" : p > 0 ? "#388BFD" : "#484F58" }}>{p}%</div>
+                                        <div style={{ fontSize: 13, fontWeight: 700, color: p === 100 ? colors.success : p > 0 ? colors.accent : "#484F58" }}>{p}%</div>
                                     </div>
-                                    <div style={{ fontSize: 9, color: "#8B949E", marginBottom: 6, lineHeight: 1.3 }}>{plan.theme}</div>
+                                    <div style={{ fontSize: 9, color: colors.textMuted, marginBottom: 6, lineHeight: 1.3 }}>{plan.theme}</div>
                                     <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 6 }}>
                                         {epics.map(e => <span key={e} style={{ fontSize: 8, padding: "1px 5px", borderRadius: 3, background: EPIC_META[e]?.color + "22", color: EPIC_META[e]?.color, border: `1px solid ${EPIC_META[e]?.color}44` }}>{e}</span>)}
                                     </div>
-                                    <div style={{ height: 3, background: "#21262D", borderRadius: 2 }}>
-                                        <div style={{ height: 3, borderRadius: 2, background: p === 100 ? "#3FB950" : "#388BFD", width: `${p}%`, transition: "width .3s" }} />
+                                    <div style={{ height: 3, background: colors.border, borderRadius: 2 }}>
+                                        <div style={{ height: 3, borderRadius: 2, background: p === 100 ? colors.success : colors.accent, width: `${p}%`, transition: "width .3s" }} />
                                     </div>
                                     <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
-                                        <span style={{ fontSize: 9, color: "#6E7681" }}>{done}/{dc.length} commits</span>
-                                        <span style={{ fontSize: 9, color: "#6E7681" }}>{hours}h</span>
+                                        <span style={{ fontSize: 9, color: colors.textMuted }}>{done}/{dc.length} commits</span>
+                                        <span style={{ fontSize: 9, color: colors.textMuted }}>{hours}h</span>
                                     </div>
-                                    {plan.milestone && <div style={{ marginTop: 4, fontSize: 8, color: "#3FB950", fontWeight: 700 }}>{plan.milestone}</div>}
+                                    {plan.milestone && <div style={{ marginTop: 4, fontSize: 8, color: colors.success, fontWeight: 700 }}>{plan.milestone}</div>}
                                 </div>
                             );
                         })}
@@ -1067,18 +1095,18 @@ function WeekGrid({ taskStatus, commitsDone, setSelectedDay }) {
 }
 
 // ─── STORY MODAL ──────────────────────────────────────────────────────────────
-function StoryModal({ storyKey, storyTab, setStoryTab, onClose }) {
+function StoryModal({ storyKey, storyTab, setStoryTab, onClose, colors, isDark }) {
     const story = BACKLOG[storyKey];
     const prompt = ALL_PROMPTS[storyKey];
     const ep = EPIC_META[story?.epic] || {};
     if (!story) return null;
 
     return (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", zIndex: 1000, display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "20px 16px", overflowY: "auto" }}
+        <div style={{ position: "fixed", inset: 0, background: isDark ? "rgba(0,0,0,0.8)" : "rgba(255,255,255,0.7)", backdropFilter: "blur(4px)", zIndex: 1000, display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "40px 20px", overflowY: "auto", transition: "background-color 0.3s ease" }}
             onClick={onClose}>
             <div style={{
-                background: "#161B22", border: "1px solid #388BFD", borderRadius: 8, width: "100%", maxWidth: 780,
-                boxShadow: "0 20px 60px rgba(0,0,0,0.6)"
+                background: colors.cardBg, border: "1px solid #388BFD", borderRadius: 8, width: "100%", maxWidth: 780,
+                boxShadow: isDark ? "0 20px 60px rgba(0,0,0,0.6)" : "0 20px 60px rgba(0,0,0,0.15)", transition: "all 0.3s ease"
             }}
                 onClick={e => e.stopPropagation()}>
 
@@ -1086,22 +1114,22 @@ function StoryModal({ storyKey, storyTab, setStoryTab, onClose }) {
                 <div style={{ padding: "14px 16px", borderBottom: "1px solid #30363D", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                     <div>
                         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                            <span style={{ fontSize: 11, fontWeight: 700, color: "#0D1117", padding: "2px 8px", borderRadius: 4, background: ep.color }}>{storyKey}</span>
-                            <span style={{ fontSize: 9, padding: "2px 6px", borderRadius: 4, background: "#21262D", color: "#8B949E", border: "1px solid #30363D" }}>{story.points} pts</span>
-                            <span style={{ fontSize: 9, padding: "2px 6px", borderRadius: 4, background: "#21262D", color: story.priority === "Critical" ? "#F85149" : "#D2A8FF", border: "1px solid #30363D" }}>{story.priority}</span>
-                            {prompt && <span style={{ fontSize: 9, padding: "2px 6px", borderRadius: 4, background: "#0D2140", color: "#388BFD", border: "1px solid #388BFD44" }}>{prompt.model}</span>}
+                            <span style={{ fontSize: 11, fontWeight: 700, color: colors.bg, padding: "2px 8px", borderRadius: 4, background: ep.color }}>{storyKey}</span>
+                            <span style={{ fontSize: 9, padding: "2px 6px", borderRadius: 4, background: colors.border, color: colors.textMuted, border: `1px solid ${colors.border}` }}>{story.points} pts</span>
+                            <span style={{ fontSize: 9, padding: "2px 6px", borderRadius: 4, background: colors.border, color: story.priority === "Critical" ? "#F85149" : "#D2A8FF", border: `1px solid ${colors.border}` }}>{story.priority}</span>
+                            {prompt && <span style={{ fontSize: 9, padding: "2px 6px", borderRadius: 4, background: "#0D2140", color: colors.accent, border: "1px solid #388BFD44" }}>{prompt.model}</span>}
                         </div>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: "#E6EDF3" }}>{story.title}</div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: colors.textMain }}>{story.title}</div>
                     </div>
-                    <button onClick={onClose} style={{ background: "none", border: "none", color: "#8B949E", cursor: "pointer", fontSize: 18, lineHeight: 1, padding: "0 4px", fontFamily: "inherit" }}>×</button>
+                    <button onClick={onClose} style={{ background: "none", border: "none", color: colors.textMuted, cursor: "pointer", fontSize: 18, lineHeight: 1, padding: "0 4px", fontFamily: "inherit" }}>×</button>
                 </div>
 
                 {/* Tabs */}
-                <div style={{ display: "flex", borderBottom: "1px solid #30363D", background: "#0D1117" }}>
+                <div style={{ display: "flex", borderBottom: "1px solid #30363D", background: colors.bg }}>
                     {[{ id: "backlog", label: "📋 Backlog Story" }, { id: "prompts", label: "🤖 Copilot Prompts" }].map(t => (
                         <button key={t.id} onClick={() => setStoryTab(t.id)} style={{
                             padding: "8px 16px", border: "none", background: "none", cursor: "pointer", fontSize: 11, fontWeight: storyTab === t.id ? 700 : 400,
-                            color: storyTab === t.id ? "#E6EDF3" : "#8B949E",
+                            color: storyTab === t.id ? colors.textMain : colors.textMuted,
                             borderBottom: storyTab === t.id ? "2px solid #388BFD" : "2px solid transparent",
                             fontFamily: "inherit",
                         }}>{t.label}</button>
@@ -1113,22 +1141,22 @@ function StoryModal({ storyKey, storyTab, setStoryTab, onClose }) {
                     <div style={{ padding: "16px", maxHeight: "70vh", overflowY: "auto" }}>
                         {/* User story */}
                         <div style={{ marginBottom: 14 }}>
-                            <div style={{ fontSize: 9, fontWeight: 700, color: "#8B949E", letterSpacing: 1, marginBottom: 6 }}>USER STORY</div>
-                            <div style={{ background: "#0D1117", border: "1px solid #30363D", borderRadius: 5, padding: "10px 12px", borderLeft: "3px solid " + ep.color }}>
-                                <div style={{ fontSize: 11, color: "#C9D1D9", lineHeight: 1.6, fontStyle: "italic" }}>"{story.story}"</div>
+                            <div style={{ fontSize: 9, fontWeight: 700, color: colors.textMuted, letterSpacing: 1, marginBottom: 6 }}>USER STORY</div>
+                            <div style={{ background: colors.bg, border: `1px solid ${colors.border}`, borderRadius: 5, padding: "10px 12px", borderLeft: "3px solid " + ep.color }}>
+                                <div style={{ fontSize: 11, color: colors.textMain, lineHeight: 1.6, fontStyle: "italic" }}>"{story.story}"</div>
                             </div>
                         </div>
 
                         {/* Acceptance criteria */}
                         <div>
-                            <div style={{ fontSize: 9, fontWeight: 700, color: "#8B949E", letterSpacing: 1, marginBottom: 6 }}>ACCEPTANCE CRITERIA</div>
+                            <div style={{ fontSize: 9, fontWeight: 700, color: colors.textMuted, letterSpacing: 1, marginBottom: 6 }}>ACCEPTANCE CRITERIA</div>
                             {story.ac.map((ac, i) => (
                                 <div key={i} style={{
                                     display: "flex", gap: 8, padding: "7px 10px", marginBottom: 3,
-                                    background: "#0D1117", border: "1px solid #21262D", borderRadius: 4, alignItems: "flex-start"
+                                    background: colors.bg, border: "1px solid #21262D", borderRadius: 4, alignItems: "flex-start"
                                 }}>
-                                    <span style={{ fontSize: 10, color: "#3FB950", fontWeight: 700, flexShrink: 0, marginTop: 1 }}>AC{i + 1}</span>
-                                    <span style={{ fontSize: 10, color: "#C9D1D9", lineHeight: 1.5 }}>{ac}</span>
+                                    <span style={{ fontSize: 10, color: colors.success, fontWeight: 700, flexShrink: 0, marginTop: 1 }}>AC{i + 1}</span>
+                                    <span style={{ fontSize: 10, color: colors.textMain, lineHeight: 1.5 }}>{ac}</span>
                                 </div>
                             ))}
                         </div>
@@ -1139,28 +1167,28 @@ function StoryModal({ storyKey, storyTab, setStoryTab, onClose }) {
                 {storyTab === "prompts" && (
                     <div style={{ padding: "16px", maxHeight: "70vh", overflowY: "auto" }}>
                         {!prompt ? (
-                            <div style={{ color: "#8B949E", fontSize: 11, padding: "20px", textAlign: "center" }}>Prompts not yet defined for this story. Add them to the PROMPTS data object.</div>
+                            <div style={{ color: colors.textMuted, fontSize: 11, padding: "20px", textAlign: "center" }}>Prompts not yet defined for this story. Add them to the PROMPTS data object.</div>
                         ) : (
                             <>
                                 {/* Expected outcome */}
                                 <div style={{ marginBottom: 14, padding: "10px 12px", background: "#0D2818", border: "1px solid #238636", borderRadius: 5 }}>
-                                    <div style={{ fontSize: 9, fontWeight: 700, color: "#3FB950", letterSpacing: 1, marginBottom: 4 }}>EXPECTED OUTCOME AFTER COMPLETING THIS STORY</div>
+                                    <div style={{ fontSize: 9, fontWeight: 700, color: colors.success, letterSpacing: 1, marginBottom: 4 }}>EXPECTED OUTCOME AFTER COMPLETING THIS STORY</div>
                                     <div style={{ fontSize: 11, color: "#7EE787", lineHeight: 1.5 }}>{prompt.expect}</div>
                                 </div>
 
                                 {/* Atomic commits */}
-                                <div style={{ fontSize: 9, fontWeight: 700, color: "#8B949E", letterSpacing: 1, marginBottom: 8 }}>ATOMIC COMMITS — copy each prompt into Copilot chat</div>
+                                <div style={{ fontSize: 9, fontWeight: 700, color: colors.textMuted, letterSpacing: 1, marginBottom: 8 }}>ATOMIC COMMITS — copy each prompt into Copilot chat</div>
                                 {prompt.commits.map((c, i) => (
-                                    <div key={i} style={{ marginBottom: 10, background: "#0D1117", border: "1px solid #30363D", borderRadius: 5, overflow: "hidden" }}>
-                                        <div style={{ padding: "8px 12px", background: "#21262D", borderBottom: "1px solid #30363D", display: "flex", alignItems: "center", gap: 8 }}>
-                                            <span style={{ fontSize: 10, fontWeight: 700, color: "#388BFD", flexShrink: 0 }}>#{i + 1}</span>
-                                            <span style={{ fontSize: 10, fontWeight: 700, color: "#E6EDF3", fontFamily: "monospace" }}>{c.label}</span>
+                                    <div key={i} style={{ marginBottom: 10, background: colors.bg, border: `1px solid ${colors.border}`, borderRadius: 5, overflow: "hidden" }}>
+                                        <div style={{ padding: "8px 12px", background: colors.border, borderBottom: "1px solid #30363D", display: "flex", alignItems: "center", gap: 8 }}>
+                                            <span style={{ fontSize: 10, fontWeight: 700, color: colors.accent, flexShrink: 0 }}>#{i + 1}</span>
+                                            <span style={{ fontSize: 10, fontWeight: 700, color: colors.textMain, fontFamily: "monospace" }}>{c.label}</span>
                                         </div>
                                         <div style={{ padding: "10px 12px" }}>
-                                            <div style={{ fontSize: 9, fontWeight: 700, color: "#6E7681", letterSpacing: 1, marginBottom: 5 }}>PROMPT</div>
+                                            <div style={{ fontSize: 9, fontWeight: 700, color: colors.textMuted, letterSpacing: 1, marginBottom: 5 }}>PROMPT</div>
                                             <div style={{
-                                                fontSize: 10, color: "#C9D1D9", lineHeight: 1.6, fontFamily: "monospace", whiteSpace: "pre-wrap",
-                                                background: "#0D1117", padding: "8px", borderRadius: 3, border: "1px solid #21262D"
+                                                fontSize: 10, color: colors.textMain, lineHeight: 1.6, fontFamily: "monospace", whiteSpace: "pre-wrap",
+                                                background: colors.bg, padding: "8px", borderRadius: 3, border: "1px solid #21262D"
                                             }}>
                                                 {c.prompt}
                                             </div>
@@ -1170,7 +1198,7 @@ function StoryModal({ storyKey, storyTab, setStoryTab, onClose }) {
 
                                 {/* Verify */}
                                 <div style={{ marginTop: 4, padding: "10px 12px", background: "#0D2818", border: "1px solid #238636", borderRadius: 5 }}>
-                                    <div style={{ fontSize: 9, fontWeight: 700, color: "#3FB950", letterSpacing: 1, marginBottom: 4 }}>VERIFY (done when this passes)</div>
+                                    <div style={{ fontSize: 9, fontWeight: 700, color: colors.success, letterSpacing: 1, marginBottom: 4 }}>VERIFY (done when this passes)</div>
                                     <div style={{ fontSize: 10, color: "#7EE787", fontFamily: "monospace" }}>{prompt.verify}</div>
                                 </div>
                             </>
