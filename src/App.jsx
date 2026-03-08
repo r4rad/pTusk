@@ -9,7 +9,7 @@ function Home() {
   const [count, setCount] = useState(0)
 
   return (
-    <>
+    <div className="home-container">
       <div>
         <a href="https://vite.dev" target="_blank">
           <img src={viteLogo} className="logo" alt="Vite logo" />
@@ -20,7 +20,7 @@ function Home() {
       </div>
       <h1>Vite + React</h1>
       <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
+        <button className="home-btn" onClick={() => setCount((count) => count + 1)}>
           count is {count}
         </button>
         <p>
@@ -37,7 +37,7 @@ function Home() {
           </button>
         </Link>
       </div>
-    </>
+    </div>
   )
 }
 
