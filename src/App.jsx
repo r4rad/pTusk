@@ -44,7 +44,7 @@ function Home() {
 function App() {
   return (
     <Routes>
-      <Route path="/" element={<Home />} />
+      <Route path="/" element={<IAMPlanner />} />
       <Route path="/planner" element={<IAMPlanner />} />
     </Routes>
   )

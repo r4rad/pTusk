@@ -750,14 +750,14 @@ export default function App() {
         bg: isDark ? "#0A0D14" : "#F8F5F2", // Midnight Blue vs Matte Cream
         headerBg: isDark ? "#121622" : "#EBE6E0",
         border: isDark ? "#2A3143" : "#D1CAC2",
-        textMain: isDark ? colors.textMain : "#2C3643",
-        textMuted: isDark ? colors.textMuted : "#6E7A8A",
+        textMain: isDark ? "#E6EDF3" : "#2C3643",
+        textMuted: isDark ? "#8B949E" : "#6E7A8A",
         cardBg: isDark ? "#121622" : "#FFFFFF",
         cardBorder: isDark ? "#2A3143" : "#EBE6E0",
         cardHighlight: isDark ? "#1C212E" : "#F4EFEA",
-        accent: colors.accent,
+        accent: "#388BFD",
         accentLight: isDark ? "#388BFD33" : "#E2EFFF",
-        success: colors.success,
+        success: "#3FB950",
         warning: "#D2A8FF",
         danger: "#F85149"
     };
