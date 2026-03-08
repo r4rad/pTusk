@@ -1,9 +1,11 @@
 import { useState } from 'react'
+import { Routes, Route, Link } from 'react-router-dom'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
+import IAMPlanner from './IAM-Planner'
 
-function App() {
+function Home() {
   const [count, setCount] = useState(0)
 
   return (
@@ -28,7 +30,23 @@ function App() {
       <p className="read-the-docs">
         Click on the Vite and React logos to learn more
       </p>
+      <div style={{ marginTop: '2rem' }}>
+        <Link to="/planner">
+          <button style={{ background: '#388BFD', color: '#fff', fontSize: '1.2rem', padding: '10px 20px', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>
+            Open IAM Planner
+          </button>
+        </Link>
+      </div>
     </>
+  )
+}
+
+function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<Home />} />
+      <Route path="/planner" element={<IAMPlanner />} />
+    </Routes>
   )
 }
 
